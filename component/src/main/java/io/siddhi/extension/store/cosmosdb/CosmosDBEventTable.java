@@ -17,28 +17,13 @@
  */
 package io.siddhi.extension.store.cosmosdb;
 
-import com.cosmosdb.CosmosBulkWriteException;
-import com.cosmosdb.CosmosClient;
-import com.cosmosdb.CosmosClientOptions;
-import com.cosmosdb.CosmosClientURI;
-import com.cosmosdb.CosmosException;
-import com.cosmosdb.CosmosSocketOpenException;
-import com.cosmosdb.client.CosmosCollection;
-import com.cosmosdb.client.CosmosCursor;
-import com.cosmosdb.client.CosmosDatabase;
-import com.cosmosdb.client.model.DeleteManyModel;
-import com.cosmosdb.client.model.IndexModel;
-import com.cosmosdb.client.model.InsertOneModel;
-import com.cosmosdb.client.model.UpdateManyModel;
-import com.cosmosdb.client.model.UpdateOptions;
-import com.cosmosdb.client.model.WriteModel;
+import com.microsoft.azure.documentdb.*;
 import io.siddhi.annotation.Example;
 import io.siddhi.annotation.Extension;
 import io.siddhi.annotation.Parameter;
 import io.siddhi.annotation.SystemParameter;
 import io.siddhi.annotation.util.DataType;
 import io.siddhi.core.exception.ConnectionUnavailableException;
-import io.siddhi.core.exception.SiddhiAppCreationException;
 import io.siddhi.core.table.record.AbstractRecordTable;
 import io.siddhi.core.table.record.ExpressionBuilder;
 import io.siddhi.core.table.record.RecordIterator;
@@ -54,15 +39,11 @@ import io.siddhi.query.api.definition.TableDefinition;
 import io.siddhi.query.api.util.AnnotationHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bson.Document;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_INDEX_BY;
-import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_PRIMARY_KEY;
 import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_STORE;
 
 
@@ -277,13 +258,16 @@ import static io.siddhi.core.util.SiddhiConstants.ANNOTATION_STORE;
 public class CosmosDBEventTable extends AbstractRecordTable {
     private static final Log log = LogFactory.getLog(CosmosDBEventTable.class);
 
-    private CosmosClientURI cosmosClientURI;
-    private CosmosClient cosmosClient;
-    private String databaseName;
-    private String collectionName;
+    private String databaseId="TestDatabase";
+    private String collectionId="TestCollection";
     private List<String> attributeNames;
-    private ArrayList<IndexModel> expectedIndexModels;
     private boolean initialCollectionTest;
+    private static final String HOST = "https://5cfa9c0d-0ee0-4-231-b9ee.documents.azure.com:443/";
+    private static final String MASTER_KEY = "RgSspaX6sSQvnHE9hHyOZP5T6t4awzyuOYrMueWm597UloNxMeuZpbLlVFAHwhaZceikoaYksDxKlvlPYcLOFA==";
+    private static DocumentClient documentClient;
+    private static Database databaseCache;
+    private static DocumentCollection collectionCache;
+
 
     @Override
     protected void init(TableDefinition tableDefinition, ConfigReader configReader) {
@@ -292,29 +276,20 @@ public class CosmosDBEventTable extends AbstractRecordTable {
 
         Annotation storeAnnotation = AnnotationHelper
                 .getAnnotation(ANNOTATION_STORE, tableDefinition.getAnnotations());
-        Annotation primaryKeys = AnnotationHelper
-                .getAnnotation(ANNOTATION_PRIMARY_KEY, tableDefinition.getAnnotations());
-        Annotation indices = AnnotationHelper
-                .getAnnotation(ANNOTATION_INDEX_BY, tableDefinition.getAnnotations());
+
 
         this.initializeConnectionParameters(storeAnnotation, configReader);
 
-        this.expectedIndexModels = new ArrayList<>();
-        IndexModel primaryKey = CosmosTableUtils.extractPrimaryKey(primaryKeys, this.attributeNames);
-        if (primaryKey != null) {
-            this.expectedIndexModels.add(primaryKey);
-        }
-        this.expectedIndexModels.addAll(CosmosTableUtils.extractIndexModels(indices, this.attributeNames));
 
         String customCollectionName = storeAnnotation.getElement(
                 CosmosTableConstants.ANNOTATION_ELEMENT_COLLECTION_NAME);
-        this.collectionName = CosmosTableUtils.isEmpty(customCollectionName) ?
+        this.collectionId = CosmosTableUtils.isEmpty(customCollectionName) ?
                 tableDefinition.getId() : customCollectionName;
         this.initialCollectionTest = false;
     }
 
     /**
-     * Method for initializing cosmosClientURI and database name.
+     * Method for initializing HOST and database name.
      *
      * @param storeAnnotation the source annotation which contains the needed parameters.
      * @param configReader    {@link ConfigReader} ConfigurationReader.
@@ -322,191 +297,165 @@ public class CosmosDBEventTable extends AbstractRecordTable {
      *                             argument for cosmosdb.uri
      */
     private void initializeConnectionParameters(Annotation storeAnnotation, ConfigReader configReader) {
-        String cosmosClientURI = storeAnnotation.getElement(CosmosTableConstants.ANNOTATION_ELEMENT_URI);
-        if (cosmosClientURI != null) {
-            CosmosClientOptions.Builder cosmosClientOptionsBuilder =
-                    CosmosTableUtils.extractCosmosClientOptionsBuilder(storeAnnotation, configReader);
-            try {
-                this.cosmosClientURI = new CosmosClientURI(cosmosClientURI, cosmosClientOptionsBuilder);
-                this.databaseName = this.cosmosClientURI.getDatabase();
-            } catch (IllegalArgumentException e) {
-                throw new SiddhiAppCreationException("Annotation '" + storeAnnotation.getName() + "' contains " +
-                        "illegal value for 'cosmosdb.uri' as '" + cosmosClientURI + "'. Please check your query and " +
-                        "try again.", e);
-            }
-        } else {
-            throw new SiddhiAppCreationException("Annotation '" + storeAnnotation.getName() +
-                    "' must contain the element 'cosmosdb.uri'. Please check your query and try again.");
-        }
-    }
+        //String uri = storeAnnotation.getElement(CosmosTableConstants.ANNOTATION_ELEMENT_URI);
 
-    /**
-     * Method for checking if the collection exists or not.
-     *
-     * @return <code>true</code> if the collection exists
-     * <code>false</code> otherwise
-     * @throws CosmosTableException if lookup fails.
-     */
-    private boolean collectionExists() throws ConnectionUnavailableException {
-        try {
-            for (String collectionName : this.getDatabaseObject().listCollectionNames()) {
-                if (this.collectionName.equals(collectionName)) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (CosmosSocketOpenException e) {
-            throw new ConnectionUnavailableException(e);
-        } catch (CosmosException e) {
-            this.destroy();
-            throw new CosmosTableException("Error in retrieving collection names from the database '"
-                    + this.databaseName + "' : " + e.getLocalizedMessage(), e);
-        }
-    }
-
-    /**
-     * Method for returning a database object.
-     *
-     * @return a new {@link CosmosDatabase} instance from the Cosmos client.
-     */
-    private CosmosDatabase getDatabaseObject() {
-        if (this.cosmosClient == null) {
-            try {
-                this.cosmosClient = new CosmosClient(this.cosmosClientURI);
-            } catch (CosmosException e) {
-                throw new SiddhiAppCreationException("Annotation 'Store' contains illegal value for " +
-                        "element 'cosmosdb.uri' as '" + this.cosmosClientURI + "'. Please check " +
-                        "your query and try again.", e);
-            }
-        }
-        return this.cosmosClient.getDatabase(this.databaseName);
-    }
-
-    /**
-     * Method for returning a collection object.
-     *
-     * @return a new {@link CosmosCollection} instance from the Cosmos client.
-     */
-    private CosmosCollection<Document> getCollectionObject() {
-        return this.getDatabaseObject().getCollection(this.collectionName);
-    }
-
-    /**
-     * Method for creating indices on the collection.
-     */
-    private void createIndices(List<IndexModel> indexModels) throws ConnectionUnavailableException {
-        if (!indexModels.isEmpty()) {
-            try {
-                this.getCollectionObject().createIndexes(indexModels);
-            } catch (CosmosSocketOpenException e) {
-                throw new ConnectionUnavailableException(e);
-            } catch (CosmosException e) {
-                this.destroy();
-                throw new CosmosTableException("Error in creating indices in the database '"
-                        + this.collectionName + "' : " + e.getLocalizedMessage(), e);
-            }
-        }
-    }
-
-    /**
-     * Method for doing bulk write operations on the collection.
-     *
-     * @param parsedRecords a List of WriteModels to be applied
-     * @throws CosmosTableException if the write fails
-     */
-    private void bulkWrite(List<? extends WriteModel<Document>> parsedRecords) throws ConnectionUnavailableException {
-        try {
-            if (!parsedRecords.isEmpty()) {
-                this.getCollectionObject().bulkWrite(parsedRecords);
-            }
-        } catch (CosmosSocketOpenException e) {
-            throw new ConnectionUnavailableException(e);
-        } catch (CosmosBulkWriteException e) {
-            List<com.cosmosdb.bulk.BulkWriteError> writeErrors = e.getWriteErrors();
-            int failedIndex;
-            Object failedModel;
-            for (com.cosmosdb.bulk.BulkWriteError bulkWriteError : writeErrors) {
-                failedIndex = bulkWriteError.getIndex();
-                failedModel = parsedRecords.get(failedIndex);
-                if (failedModel instanceof UpdateManyModel) {
-                    log.error("The update filter '" + ((UpdateManyModel) failedModel).getFilter().toString() +
-                            "' failed to update with event '" + ((UpdateManyModel) failedModel).getUpdate().toString() +
-                            "' in the CosmosDB Event Table due to " + bulkWriteError.getMessage());
-                } else {
-                    if (failedModel instanceof InsertOneModel) {
-                        log.error("The event '" + ((InsertOneModel) failedModel).getDocument().toString() +
-                                "' failed to insert into the Cosmos Event Table due to " + bulkWriteError.getMessage());
-                    } else {
-
-                        log.error("The delete filter '" + ((DeleteManyModel) failedModel).getFilter().toString() +
-                                "' failed to delete the events from the CosmosDB Event Table due to "
-                                + bulkWriteError.getMessage());
-                    }
-                }
-                if (failedIndex + 1 < parsedRecords.size()) {
-                    this.bulkWrite(parsedRecords.subList(failedIndex + 1, parsedRecords.size() - 1));
-                }
-            }
-        } catch (CosmosException e) {
-            this.destroy();
-            throw new CosmosTableException("Error in writing to the collection '"
-                    + this.collectionName + "' : " + e.getLocalizedMessage(), e);
+        if (documentClient == null) {
+            documentClient = new DocumentClient(HOST, MASTER_KEY,
+                    ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
         }
     }
 
     @Override
     protected void add(List<Object[]> records) throws ConnectionUnavailableException {
-        List<InsertOneModel<Document>> parsedRecords = records.stream().map(record -> {
-            Map<String, Object> insertMap = CosmosTableUtils.mapValuesToAttributes(record, this.attributeNames);
-            Document insertDocument = new Document(insertMap);
-            if (log.isDebugEnabled()) {
-                log.debug("Event formatted as document '" + insertDocument.toJson() + "' is used for building " +
-                        "Cosmos Insert Model");
+
+        for (int i=0; i< records.size(); i++) {
+            Map<String, Object> insertMap = CosmosTableUtils.mapValuesToAttributes(records.get(i), this.attributeNames);
+            Document insertDocument = new Document(String.valueOf(insertMap));
+            //insertDocument.set("entityType", "insertItem");
+
+            try {
+                // Persist the document using the DocumentClient.
+                insertDocument = documentClient.createDocument(
+                        getTestCollection().getSelfLink(), insertDocument, null,
+                        false).getResource();
+            } catch (DocumentClientException e) {
+                e.printStackTrace();
             }
+
+
+
+        }
+        /*List<InsertOneModel<Document>> parsedRecords = records.stream().map(record -> {
+
             return new InsertOneModel<>(insertDocument);
         }).collect(Collectors.toList());
-        this.bulkWrite(parsedRecords);
+        this.bulkWrite(parsedRecords);*/
+    }
+
+    @Override
+    protected RecordIterator<Object[]> find(Map<String, Object> map, CompiledCondition compiledCondition) throws ConnectionUnavailableException {
+        return null;
+    }
+
+    @Override
+    protected boolean contains(Map<String, Object> map, CompiledCondition compiledCondition) throws ConnectionUnavailableException {
+        return false;
+    }
+
+    @Override
+    protected void delete(List<Map<String, Object>> list, CompiledCondition compiledCondition) throws ConnectionUnavailableException {
+
+    }
+
+    @Override
+    protected void update(CompiledCondition compiledCondition, List<Map<String, Object>> list, Map<String, CompiledExpression> map, List<Map<String, Object>> list1) throws ConnectionUnavailableException {
+
+    }
+
+    @Override
+    protected void updateOrAdd(CompiledCondition compiledCondition, List<Map<String, Object>> list, Map<String, CompiledExpression> map, List<Map<String, Object>> list1, List<Object[]> list2) throws ConnectionUnavailableException {
+
+    }
+
+    @Override
+    protected CompiledCondition compileCondition(ExpressionBuilder expressionBuilder) {
+        return null;
+    }
+
+    @Override
+    protected CompiledExpression compileSetAttribute(ExpressionBuilder expressionBuilder) {
+        return null;
     }
 
 
+    private Database getTestDatabase() {
+        if (databaseCache == null) {
+            // Get the database if it exists
+            List<Database> databaseList = documentClient
+                    .queryDatabases(
+                            "SELECT * FROM root r WHERE r.id='" + databaseId
+                                    + "'", null).getQueryIterable().toList();
+
+            if (databaseList.size() > 0) {
+                // Cache the database object so we won't have to query for it
+                // later to retrieve the selfLink.
+                databaseCache = databaseList.get(0);
+            } else {
+                // Create the database if it doesn't exist.
+                try {
+                    Database databaseDefinition = new Database();
+                    databaseDefinition.setId(databaseId);
+
+                    databaseCache = documentClient.createDatabase(
+                            databaseDefinition, null).getResource();
+                } catch (DocumentClientException e) {
+                    /*
+                     TODO: Something has gone terribly wrong - the app wasn't
+                     able to query or create the collection.
+                     Verify your connection, endpoint, and key.
+                    */
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return databaseCache;
+    }
+
+    private DocumentCollection getTestCollection() {
+        if (collectionCache == null) {
+            // Get the collection if it exists.
+            List<DocumentCollection> collectionList = documentClient
+                    .queryCollections(
+                            getTestDatabase().getSelfLink(),
+                            "SELECT * FROM root r WHERE r.id='" + collectionId
+                                    + "'", null).getQueryIterable().toList();
+
+            if (collectionList.size() > 0) {
+                // Cache the collection object so we won't have to query for it
+                // later to retrieve the selfLink.
+                collectionCache = collectionList.get(0);
+            } else {
+                // Create the collection if it doesn't exist.
+                try {
+                    DocumentCollection collectionDefinition = new DocumentCollection();
+                    collectionDefinition.setId(collectionId);
+
+                    collectionCache = documentClient.createCollection(
+                            getTestDatabase().getSelfLink(),
+                            collectionDefinition, null).getResource();
+                } catch (DocumentClientException e) {
+                    /*
+                    TODO: Something has gone terribly wrong - the app wasn't
+                     able to query or create the collection.
+                     Verify your connection, endpoint, and key.
+                    */
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return collectionCache;
+    }
 
     @Override
     protected void connect() throws ConnectionUnavailableException {
-        if (!this.initialCollectionTest) {
-            if (!this.collectionExists()) {
-                try {
-                    this.getDatabaseObject().createCollection(this.collectionName);
-                    this.createIndices(expectedIndexModels);
-                } catch (CosmosSocketOpenException e) {
-                    throw new ConnectionUnavailableException(e);
-                } catch (CosmosException e) {
-                    this.destroy();
-                    throw new CosmosTableException("Creating cosmos collection '" + this.collectionName
-                            + "' is not successful due to " + e.getLocalizedMessage(), e);
-                }
-            } else {
-                CosmosCursor<Document> existingIndicesIterator;
-                try {
-                    existingIndicesIterator = this.getCollectionObject().listIndexes().iterator();
-                } catch (CosmosSocketOpenException e) {
-                    throw new ConnectionUnavailableException(e);
-                } catch (CosmosException e) {
-                    this.destroy();
-                    throw new CosmosTableException("Retrieving indexes from  cosmos collection '" + this.collectionName
-                            + "' is not successful due to " + e.getLocalizedMessage(), e);
-                }
-                CosmosTableUtils.checkExistingIndices(expectedIndexModels, existingIndicesIterator);
-            }
-            this.initialCollectionTest = true;
-        } else {
-            try {
-                this.getDatabaseObject().listCollectionNames();
-            } catch (CosmosSocketOpenException e) {
-                throw new ConnectionUnavailableException(e);
-            }
-        }
+
     }
 
+    @Override
+    protected void disconnect() {
+
+    }
+
+    @Override
+    protected void destroy() {
+
+    }
+
+
+
+/*
     @Override
     protected void disconnect() {
     }
@@ -516,5 +465,5 @@ public class CosmosDBEventTable extends AbstractRecordTable {
         if (this.cosmosClient != null) {
             this.cosmosClient.close();
         }
-    }
+    }*/
 }

@@ -17,62 +17,23 @@
  */
 package io.siddhi.extension.store.cosmosdb.util;
 
-import com.cosmosdb.DBObject;
-import com.cosmosdb.CosmosClientOptions;
-import com.cosmosdb.ReadConcern;
-import com.cosmosdb.ReadConcernLevel;
-import com.cosmosdb.ReadPreference;
-import com.cosmosdb.WriteConcern;
-import com.cosmosdb.client.CosmosCursor;
-import com.cosmosdb.client.model.Collation;
-import com.cosmosdb.client.model.CollationAlternate;
-import com.cosmosdb.client.model.CollationCaseFirst;
-import com.cosmosdb.client.model.CollationMaxVariable;
-import com.cosmosdb.client.model.CollationStrength;
-import com.cosmosdb.client.model.IndexModel;
-import com.cosmosdb.client.model.IndexOptions;
-import io.siddhi.core.exception.SiddhiAppCreationException;
 import io.siddhi.core.util.config.ConfigReader;
-import io.siddhi.extension.store.cosmosdb.CosmosCompiledCondition;
 import io.siddhi.extension.store.cosmosdb.exception.CosmosTableException;
-import io.siddhi.query.api.annotation.Annotation;
-import io.siddhi.query.api.definition.Attribute;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.bson.json.JsonParseException;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import javax.net.SocketFactory;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 
-import static io.siddhi.extension.store.cosmosdb.util.CosmosTableConstants.DEFAULT_KEY_STORE_FILE;
-import static io.siddhi.extension.store.cosmosdb.util.CosmosTableConstants.DEFAULT_KEY_STORE_PASSWORD;
-import static io.siddhi.extension.store.cosmosdb.util.CosmosTableConstants.DEFAULT_TRUST_STORE_FILE;
-import static io.siddhi.extension.store.cosmosdb.util.CosmosTableConstants.DEFAULT_TRUST_STORE_PASSWORD;
 import static io.siddhi.extension.store.cosmosdb.util.CosmosTableConstants.VARIABLE_CARBON_HOME;
 
 /**
@@ -93,7 +54,7 @@ public class CosmosTableUtils {
      * @param attributeNames List containing names of the attributes.
      * @return List of String with primary key attributes.
      */
-    public static IndexModel extractPrimaryKey(Annotation primaryKey, List<String> attributeNames) {
+   /* public static IndexModel extractPrimaryKey(Annotation primaryKey, List<String> attributeNames) {
         if (primaryKey == null) {
             return null;
         }
@@ -110,7 +71,7 @@ public class CosmosTableUtils {
                 }
         );
         return new IndexModel(primaryKeyIndex, new IndexOptions().unique(true));
-    }
+    }*/
 
     /**
      * Utility method which can be used to check if the given Indices are valid  and return List of
@@ -120,7 +81,7 @@ public class CosmosTableUtils {
      * @param attributeNames List containing names of the attributes.
      * @return List of IndexModel.
      */
-    public static List<IndexModel> extractIndexModels(Annotation indices, List<String> attributeNames) {
+   /* public static List<IndexModel> extractIndexModels(Annotation indices, List<String> attributeNames) {
         if (indices == null) {
             return new ArrayList<>();
         }
@@ -149,7 +110,7 @@ public class CosmosTableUtils {
             }
         }).collect(Collectors.toList());
     }
-
+*/
     /**
      * Utility method which can be used to create an IndexModel.
      *
@@ -158,7 +119,7 @@ public class CosmosTableUtils {
      * @param indexOption json string of the options of the index to be created.
      * @return IndexModel.
      */
-    private static IndexModel createIndexModel(String fieldName, Integer sortOrder, String indexOption) {
+    /*private static IndexModel createIndexModel(String fieldName, Integer sortOrder, String indexOption) {
         Document indexDocument = new Document(fieldName, sortOrder);
         if (indexOption == null) {
             return new IndexModel(indexDocument);
@@ -281,7 +242,7 @@ public class CosmosTableUtils {
             return new IndexModel(indexDocument, indexOptions);
         }
     }
-
+*/
     /**
      * Utility method which can be used to resolve the condition with the runtime values and return a Document
      * describing the filter.
@@ -291,7 +252,7 @@ public class CosmosTableUtils {
      * @param conditionParameterMap the map which contains the runtime value(s) for the condition.
      * @return Document.
      */
-    public static Document resolveCondition(CosmosCompiledCondition compiledCondition,
+/*    public static Document resolveCondition(CosmosCompiledCondition compiledCondition,
                                             Map<String, Object> conditionParameterMap) {
         Map<String, Object> parameters = compiledCondition.getPlaceholders();
         String compiledQuery = compiledCondition.getCompiledQuery();
@@ -313,7 +274,7 @@ public class CosmosTableUtils {
             log.debug("The final compiled query : '" + compiledQuery + "'");
         }
         return Document.parse(compiledQuery);
-    }
+    }*/
 
     /**
      * Utility method which can be used to check if a given string instance is null or empty.
@@ -348,7 +309,7 @@ public class CosmosTableUtils {
      * @param existingIndices List of indices that the collection contains.
      * @param expectedIndices List of indices that are defined by the annotations.
      */
-    public static void checkExistingIndices(List<IndexModel> expectedIndices, CosmosCursor<Document> existingIndices) {
+   /* public static void checkExistingIndices(List<IndexModel> expectedIndices, CosmosCursor<Document> existingIndices) {
         Map<String, Object> indexOptionsMap = new HashMap<>();
         List<Document> expectedIndexDocuments = expectedIndices.stream().map(expectedIndex -> {
             IndexOptions expectedIndexOptions = expectedIndex.getOptions();
@@ -408,16 +369,16 @@ public class CosmosTableUtils {
                     "Expected Indices '" + expectedIndexDocuments.toString() + "'");
         }
     }
-
+*/
     /**
      * Utility method which can be used to create CosmosClientOptionsBuilder from values defined in the
      * deployment yaml file.
      *
-     * @param storeAnnotation the source annotation which contains the needed parameters.
-     * @param configReader    {@link ConfigReader} Configuration Reader
+     * //@param storeAnnotation the source annotation which contains the needed parameters.
+     * //@param configReader    {@link ConfigReader} Configuration Reader
      * @return CosmosClientOptions.Builder
      */
-    public static CosmosClientOptions.Builder extractCosmosClientOptionsBuilder
+   /* public static CosmosClientOptions.Builder extractCosmosClientOptionsBuilder
     (Annotation storeAnnotation, ConfigReader configReader) {
 
         CosmosClientOptions.Builder cosmosClientOptionsBuilder = CosmosClientOptions.builder();
@@ -519,7 +480,7 @@ public class CosmosTableUtils {
         } catch (IllegalArgumentException e) {
             throw new CosmosTableException("Values Read from config readers have illegal values : ", e);
         }
-    }
+    }*/
 
     private static SocketFactory extractSocketFactory(
             String trustStore, String trustStorePassword, String keyStore, String keyStorePassword) {

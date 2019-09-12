@@ -17,21 +17,14 @@
  */
 package io.siddhi.extension.store.cosmosdb;
 
-import com.cosmosdb.client.FindIterable;
-import com.cosmosdb.client.CosmosCursor;
-import io.siddhi.core.table.record.RecordIterator;
-import org.bson.Document;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import com.microsoft.azure.documentdb.Document;
 
 /**
  * A class representing a RecordIterator which is responsible for processing CosmosDB Event Table find() operations in a
  * streaming fashion.
  */
-public class CosmosIterator implements RecordIterator<Object[]> {
+/*public class CosmosIterator implements RecordIterator<Object[]> {
     private CosmosCursor documents;
     private List<String> attributeNames;
 
@@ -41,8 +34,8 @@ public class CosmosIterator implements RecordIterator<Object[]> {
     public CosmosIterator(FindIterable documents, List<String> attributeNames) {
         this.documents = documents.iterator();
         this.attributeNames = attributeNames;
-    }
-
+    }*/
+/*
     @Override
     public boolean hasNext() {
         if (!this.preFetched) {
@@ -52,6 +45,7 @@ public class CosmosIterator implements RecordIterator<Object[]> {
         return this.nextDocument.length != 0;
     }
 
+*//*
     @Override
     public Object[] next() {
         if (this.preFetched) {
@@ -66,15 +60,16 @@ public class CosmosIterator implements RecordIterator<Object[]> {
             return new Object[0];
         }
     }
+*//*
 
-    /**
+    *//**
      * Method which is used for extracting record values (in the form of an Object array) from a
      * CosmosDB {@link Document}, according to the table's field type order.
      *
-     * @param document the {@link Document} from which the values should be retrieved.
+     * //@param document the {@link Document} from which the values should be retrieved.
      * @return an array of extracted values, all cast to {@link Object} type for portability.
-     */
-    private Object[] extractRecord(Document document) {
+     *//*
+ *//*   private Object[] extractRecord(Document document) {
         List<Object> result = new ArrayList<>();
         for (String attributeName : this.attributeNames) {
             Object attributeValue = document.get(attributeName);
@@ -87,10 +82,10 @@ public class CosmosIterator implements RecordIterator<Object[]> {
             }
         }
         return result.toArray();
-    }
+    }*//*
 
     @Override
     public void close() throws IOException {
 
     }
-}
+}*/
