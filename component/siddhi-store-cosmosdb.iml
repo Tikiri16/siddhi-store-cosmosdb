@@ -5,7 +5,6 @@
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
@@ -19,6 +18,7 @@
     <orderEntry type="library" name="Maven: org.atteo.classindex:classindex:3.6" level="project" />
     <orderEntry type="library" name="Maven: log4j:log4j:1.2.17" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-simple:1.7.12" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.12" level="project" />
     <orderEntry type="library" name="Maven: org.wso2.orbit.com.lmax:disruptor:3.4.2.wso2v1" level="project" />
     <orderEntry type="library" name="Maven: com.google.guava:guava:23.0" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:1.3.9" level="project" />
@@ -41,34 +41,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: com.beust:jcommander:1.64" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.yaml:snakeyaml:1.17" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.3" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-cosmosdb:2.6.1" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-cosmosdb-commons:2.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-handler-proxy:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-socks:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-collections4:4.2" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.commons:commons-text:1.6" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-cosmosdb-gateway:2.6.1" level="project" />
-    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-cosmosdb-direct:2.6.1" level="project" />
-    <orderEntry type="library" name="Maven: io.micrometer:micrometer-core:1.2.0" level="project" />
-    <orderEntry type="library" name="Maven: org.hdrhistogram:HdrHistogram:2.1.11" level="project" />
-    <orderEntry type="library" name="Maven: org.latencyutils:LatencyUtils:2.0.3" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.9.9.3" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.9.0" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.9.9" level="project" />
-    <orderEntry type="library" name="Maven: com.fasterxml.uuid:java-uuid-generator:3.1.4" level="project" />
-    <orderEntry type="library" name="Maven: commons-io:commons-io:2.5" level="project" />
-    <orderEntry type="library" name="Maven: com.github.davidmoten:rxjava-extras:0.8.0.17" level="project" />
-    <orderEntry type="library" name="Maven: io.reactivex:rxjava:1.3.8" level="project" />
-    <orderEntry type="library" name="Maven: io.reactivex:rxjava-string:1.1.1" level="project" />
-    <orderEntry type="library" name="Maven: io.reactivex:rxnetty:0.4.20" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec-http:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-common:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-buffer:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-codec:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-handler:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-transport:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: io.netty:netty-resolver:4.1.38.Final" level="project" />
-    <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.6" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:commons-lang3:3.3.2" level="project" />
     <orderEntry type="library" name="Maven: com.microsoft.azure:azure-documentdb:1.0.1" level="project" />
     <orderEntry type="library" name="Maven: org.codehaus.jackson:jackson-mapper-asl:1.8.5" level="project" />

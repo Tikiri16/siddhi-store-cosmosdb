@@ -2,7 +2,7 @@
 
 ## Store
 
-### cosmosdb *<a target="_blank" href="https://siddhi.io/en/v5.0/docs/query-guide/#store">(Store)</a>*
+### cosmosdb *<a target="_blank" href="http://siddhi.io/documentation/siddhi-5.x/query-guide-5.x/#store">(Store)</a>*
 
 <p style="word-wrap: break-word">Using this extension a CosmosDB Event Table can be configured to persist events in a CosmosDB of user's choice.</p>
 
