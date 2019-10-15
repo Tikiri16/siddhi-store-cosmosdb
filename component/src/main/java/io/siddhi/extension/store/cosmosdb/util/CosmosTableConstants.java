@@ -24,6 +24,7 @@ public class CosmosTableConstants {
 
     //Annotation field names
     public static final String ANNOTATION_ELEMENT_URI = "cosmosdb.uri";
+    public static final String ANNOTATION_ELEMENT_MASTERKEY = "cosmosdb.key";
     public static final String ANNOTATION_ELEMENT_COLLECTION_NAME = "collection.name";
     public static final String ANNOTATION_ELEMENT_KEYSTORE = "key.store";
     public static final String ANNOTATION_ELEMENT_STOREPASS = "key.store.password";
