@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 
-<suite name="MonogStoreTestSuite" verbose="1">
-    <test name="MonogoStoreTest - Standalone">
+<suite name="CosmosStoreTestSuite" verbose="1">
+    <test name="CosmosStoreTest - Standalone">
         <classes>
             <class name="io.siddhi.extension.store.cosmosdb.DefineCosmosTableTest"/>
             <class name="io.siddhi.extension.store.cosmosdb.ConditionVisitorTest"/>
